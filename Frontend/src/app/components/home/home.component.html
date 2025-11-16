@@ -1,0 +1,799 @@
+<div class="home-container" (click)="closeFilterDropdown()">
+  <!-- Top Bar -->
+  <div class="top-bar">
+    <div class="top-bar-content">
+      <button class="menu-icon-button" (click)="toggleSidebar()" style="cursor: pointer;">
+        <i class="fas fa-bars"></i>
+      </button>
+      <div class="logo-section" (click)="navigateToHomeOrReload($event)" style="cursor: pointer;">
+        <img src="assets/smartshop_updated_logo.png" alt="SmartShop Logo" class="top-logo" />
+        <span class="logo-text">SMARTSHOP</span>
+      </div>
+      <nav class="nav-menu">
+        <a (click)="navigateHome($event)" [class.active]="!showMyList && !showReceipts && !showProfile" class="nav-link" style="cursor: pointer;">
+          <i class="fas fa-home"></i>
+          Home
+        </a>
+        <a (click)="navigateToMyList()" [class.active]="showMyList && !showReceipts && !showProfile" class="nav-link" style="cursor: pointer;">
+          <i class="fas fa-shopping-cart"></i>
+          My List
+          <span class="list-count" *ngIf="myListCount > 0">{{ myListCount }}</span>
+        </a>
+        <a (click)="navigateToReceipts()" [class.active]="showReceipts && !showMyList && !showProfile" class="nav-link" style="cursor: pointer;">
+          <i class="fas fa-receipt"></i>
+          Receipts
+        </a>
+        <a (click)="navigateToProfile()" [class.active]="showProfile && !showMyList && !showReceipts" class="nav-link" style="cursor: pointer;">
+          <i class="fas fa-user"></i>
+          Profile
+        </a>
+      </nav>
+      <div class="location-section">
+        <div class="location-top-row">
+          <div class="user-info" *ngIf="userName" (click)="navigateToProfile()" style="cursor: pointer;">
+            <i class="fas fa-user-circle user-profile-icon"></i>
+            <span class="user-name">{{ userName }}</span>
+          </div>
+          <svg class="location-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+            <circle cx="12" cy="10" r="3"></circle>
+          </svg>
+          <div class="location-info">
+            <span class="location-zipcode">{{ isLocationLoading ? 'Loading...' : (locationZipcode || '------') }}</span>
+            <svg class="edit-zipcode-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" (click)="openZipcodePopup()">
+              <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+              <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+            </svg>
+          </div>
+        </div>
+        <div class="location-bottom-row">
+          <div class="location-icon-spacer"></div>
+          <div class="location-radius-text">Up to 15 miles only</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Main Content -->
+  <div class="main-content" [class.sidebar-overlay-active]="showSidebar">
+        <!-- Mobile Overlay -->
+        <div class="mobile-sidebar-overlay" *ngIf="showSidebar" (click)="toggleSidebar()"></div>
+        <!-- Left Sidebar - Categories -->
+        <div class="categories-sidebar" [class.sidebar-open]="showSidebar" (click)="$event.stopPropagation()">
+          <h2 class="categories-title">Categories</h2>
+          <ul class="categories-list">
+            <li
+              *ngFor="let category of categories"
+              [class.active]="selectedCategory === category"
+              (click)="selectCategory(category)"
+              class="category-item">
+              {{ category }}
+            </li>
+          </ul>
+          <div class="logout-section">
+            <button class="logout-button" (click)="logout()">
+              <i class="fas fa-sign-out-alt"></i>
+              Logout
+            </button>
+          </div>
+        </div>
+
+    <!-- Right Content - Items -->
+    <div class="items-section" [class.has-top-padding]="showMyList || showReceipts || showProfile" [class.sidebar-pushed]="showSidebar">
+        <!-- Search and Filter Bar -->
+        <div class="search-filter-bar-wrapper" *ngIf="!showMyList && !showReceipts && !showProfile">
+        <div class="search-filter-bar">
+        <div class="search-section">
+          <div class="search-bar">
+            <svg class="search-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="11" cy="11" r="8"></circle>
+              <path d="m21 21-4.35-4.35"></path>
+            </svg>
+            <input
+              type="text"
+              [(ngModel)]="searchQuery"
+              (input)="onSearchChange()"
+              placeholder="Search for products..."
+              class="search-input"
+            />
+          </div>
+        </div>
+        <div class="filter-section">
+          <button type="button" class="filter-button" [class.active]="isFilterActive" (click)="toggleFilterDropdown($event)">
+            <i class="fas fa-filter"></i>
+            <span class="filter-text">Filter</span>
+          </button>
+          <div class="filter-dropdown" *ngIf="showFilterDropdown" (click)="$event.stopPropagation()">
+            <div class="filter-section-title">Sort By</div>
+            <div class="filter-option" [class.selected]="selectedSort === 'name-asc'" (click)="selectedSort = 'name-asc'">
+              <span>Ascending A-Z</span>
+            </div>
+            <div class="filter-option" [class.selected]="selectedSort === 'name-desc'" (click)="selectedSort = 'name-desc'">
+              <span>Descending Z-A</span>
+            </div>
+            
+            <div class="filter-divider"></div>
+            
+            <div class="filter-section-title">Select Store</div>
+            <div class="store-options">
+              <label *ngFor="let store of stores" class="store-option">
+                <input type="checkbox" [checked]="selectedStores[store]" (change)="toggleStore(store)" />
+                <span>{{ store }}</span>
+              </label>
+            </div>
+            
+            <div class="filter-divider"></div>
+            
+            <div class="filter-actions">
+              <button class="results-button" (click)="applyFilter()">Results</button>
+              <button class="clear-button" (click)="clearFilter()">Clear</button>
+            </div>
+          </div>
+        </div>
+      </div>
+      </div>
+
+          <h2 class="items-title" *ngIf="!showMyList && !showReceipts && !showProfile">
+            {{ isFilterActive ? 'Your Result Products' : 'Featured Products' }}
+            <span class="product-count">({{ getProductCount() }})</span>
+          </h2>
+          
+          <!-- Price Comparison View -->
+      <div *ngIf="showPriceComparison && selectedProduct" class="price-comparison-container">
+        <div class="price-comparison-content">
+          <!-- Left Side - Product Details -->
+          <div class="product-info-section">
+            <button class="back-button" (click)="closePriceComparison()">
+              <i class="fas fa-arrow-left"></i>
+              Back
+            </button>
+            
+            <div class="product-images">
+              <div class="product-main-image">
+                <div class="main-image">{{ selectedProduct.image }}</div>
+              </div>
+            </div>
+            
+            <div class="product-details">
+              <h1 class="product-name">{{ selectedProduct.name }}</h1>
+              <p class="product-size">{{ selectedProduct.size }}</p>
+            </div>
+          </div>
+
+          <!-- Divider Line -->
+          <div class="divider"></div>
+
+          <!-- Right Side - Price Comparison Table or Store Details -->
+          <div class="price-comparison-section">
+            <!-- Store Details View -->
+            <div *ngIf="showStoreDetails && selectedStore" class="store-details-inline">
+              <div class="store-header">
+                <div class="store-logo-section">
+                  <img *ngIf="getStoreDetails(selectedStore.store).logo" [src]="getStoreDetails(selectedStore.store).logo" [alt]="getStoreDetails(selectedStore.store).name + ' Logo'" class="store-logo" />
+                  <h2 class="store-name-large">{{ getStoreDetails(selectedStore.store).name }}</h2>
+                  <div class="store-rating" *ngIf="getStoreDetails(selectedStore.store).rating">
+                    <span class="rating-stars">
+                      <i class="fas fa-star" *ngFor="let i of getFullStars(getStoreDetails(selectedStore.store).rating)"></i>
+                      <i class="fas fa-star-half-alt" *ngIf="hasHalfStar(getStoreDetails(selectedStore.store).rating)"></i>
+                    </span>
+                    <span class="rating-text">{{ getStoreDetails(selectedStore.store).rating }}/5</span>
+                  </div>
+                  <p class="membership-note" *ngIf="getStoreDetails(selectedStore.store).membershipRequired && !hasMembershipForStore(selectedStore.store)">*Membership required</p>
+                  <p class="membership-active" *ngIf="getStoreDetails(selectedStore.store).membershipRequired && hasMembershipForStore(selectedStore.store)">Membership Active</p>
+                </div>
+              </div>
+
+              <div class="store-info-section">
+                <div class="store-info-item">
+                  <i class="fas fa-map-marker-alt"></i>
+                  <span>{{ getStoreDetails(selectedStore.store).address }}</span>
+                </div>
+                <div class="store-info-item">
+                  <i class="fas fa-phone"></i>
+                  <span>{{ getStoreDetails(selectedStore.store).phone }}</span>
+                </div>
+              </div>
+
+              <div class="store-actions">
+                <button class="action-button directions-button" (click)="openDirections(getStoreDetails(selectedStore.store).address)">
+                  <i class="fas fa-directions"></i>
+                  Directions
+                </button>
+                <button class="action-button website-button" (click)="openWebsite(getStoreDetails(selectedStore.store).website)">
+                  <i class="fas fa-globe"></i>
+                  Website
+                </button>
+              </div>
+
+              <div class="store-bottom-actions">
+                <button class="back-to-stores-button" (click)="closeStoreDetails()">
+                  Back to Stores
+                </button>
+                <button class="add-to-list-button" (click)="addToList()" [disabled]="isProductAdded(selectedProduct.id, selectedStore.store)">
+                  {{ isProductAdded(selectedProduct.id, selectedStore.store) ? 'Already Added' : 'Add to My list' }}
+                </button>
+              </div>
+            </div>
+
+            <!-- Price Comparison Table -->
+            <div *ngIf="!showStoreDetails">
+              <h2 class="comparison-title">Price Comparison</h2>
+              <table class="price-table">
+                <thead>
+                  <tr>
+                    <th>Store</th>
+                    <th>Price</th>
+                    <th>Distance</th>
+                    <th>Action</th>
+                  </tr>
+                </thead>
+                    <tbody>
+                      <tr *ngFor="let storePrice of selectedProduct.storePrices">
+                        <td class="store-name">{{ storePrice.store }}</td>
+                        <td class="price-cell" [style.color]="getPriceColor(storePrice.price) === 'green' ? '#2d8659' : (getPriceColor(storePrice.price) === 'red' ? '#d32f2f' : '#f57c00')">
+                          ${{ storePrice.price.toFixed(2) }}
+                        </td>
+                        <td class="distance-cell">{{ storePrice.distance }} mi</td>
+                        <td>
+                          <button class="view-store-button" (click)="viewStore(storePrice)" [disabled]="isProductAdded(selectedProduct.id, storePrice.store)">
+                            {{ isProductAdded(selectedProduct.id, storePrice.store) ? 'Added' : 'View' }}
+                          </button>
+                        </td>
+                      </tr>
+                    </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Remove Confirmation Message -->
+      <div *ngIf="showRemoveConfirmation" class="remove-confirmation-message">
+        The item successfully removed from the list!!
+      </div>
+
+      <!-- My List View -->
+      <div *ngIf="showMyList" class="my-list-container">
+        <div class="my-list-header">
+          <h2 class="my-list-title">My list</h2>
+            <button class="back-to-home-button" (click)="showMyList = false; showPriceComparison = false; showStoreDetails = false; showReceipts = false; showProfile = false">
+            <i class="fas fa-arrow-left"></i>
+            Back to Home
+          </button>
+        </div>
+        
+        <div *ngIf="myListItems.length === 0" class="empty-list-message">
+          <p>Your list is empty. Add items from the product list to get started!</p>
+        </div>
+
+        <div *ngIf="myListItems.length > 0" class="my-list-content">
+          <table class="my-list-table">
+            <thead>
+              <tr>
+                <th>Store Details</th>
+                <th>Price</th>
+                <th>Distance</th>
+                <th>Quantity</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let item of myListItems">
+                <td class="store-details-cell">
+                  <div class="store-details-content">
+                    <img *ngIf="getStoreLogo(item.store)" [src]="getStoreLogo(item.store)" [alt]="item.store + ' Logo'" class="store-logo-small" />
+                    <div class="store-product-info">
+                      <div class="store-name-small">{{ item.store }}</div>
+                      <div class="product-name-small">{{ item.productName }}</div>
+                      <div class="product-size-small">{{ item.productSize }}</div>
+                    </div>
+                  </div>
+                </td>
+                <td class="price-cell-list">${{ item.price.toFixed(2) }}</td>
+                <td class="distance-cell-list">{{ item.distance }} mi</td>
+                <td class="quantity-cell">
+                  <div class="quantity-selector">
+                    <button class="quantity-button" (click)="item.quantity === 1 ? removeFromList(item.id) : updateQuantity(item.id, -1)">
+                      <i *ngIf="item.quantity === 1" class="fas fa-trash mobile-trash-icon"></i>
+                      <span *ngIf="item.quantity > 1">-</span>
+                    </button>
+                    <span class="quantity-value">{{ item.quantity }}</span>
+                    <button class="quantity-button" (click)="updateQuantity(item.id, 1)">+</button>
+                  </div>
+                </td>
+                <td class="actions-cell">
+                  <button class="remove-button" (click)="removeFromList(item.id)">
+                    <i class="fas fa-trash"></i>
+                    Remove
+                  </button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+          
+          <div class="total-cart-value">
+            <div class="total-label">Total Cart Value</div>
+            <div class="total-amount">${{ getTotalCartValue().toFixed(2) }}</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Receipts View -->
+      <div *ngIf="showReceipts" class="receipts-container">
+        <div class="receipts-header">
+          <button class="back-arrow-button" (click)="showReceipts = false; showPriceComparison = false; showStoreDetails = false; showMyList = false; showProfile = false">
+            <i class="fas fa-arrow-left"></i>
+          </button>
+          <h2 class="receipts-title">Upload/Scan Receipt</h2>
+        </div>
+        
+        <div class="upload-scan-card" *ngIf="!showCamera">
+          <label for="receipt-upload" class="upload-scan-button upload-button">
+            <i class="fas fa-upload"></i>
+            Upload
+          </label>
+          <input 
+            type="file" 
+            id="receipt-upload" 
+            accept="*/*" 
+            (change)="onFileSelected($event)"
+            style="display: none;"
+          />
+          <div class="upload-note">All type of files are accepted</div>
+          <div class="or-text">Or</div>
+          <button class="upload-scan-button scan-button" (click)="scanReceipt()">
+            <i class="fas fa-camera"></i>
+            Scan
+          </button>
+        </div>
+
+        <!-- Camera View -->
+        <div *ngIf="showCamera" class="camera-container">
+          <div class="camera-header">
+            <button class="back-arrow-button" (click)="stopCamera()">
+              <i class="fas fa-arrow-left"></i>
+            </button>
+            <h3 class="camera-title">Scan Receipt</h3>
+          </div>
+          <video id="camera-video" autoplay playsinline class="camera-video"></video>
+          <div class="camera-controls">
+            <button class="capture-button" (click)="capturePhoto()">
+              <i class="fas fa-camera"></i>
+            </button>
+            <button class="cancel-camera-button" (click)="stopCamera()">
+              Cancel
+            </button>
+          </div>
+        </div>
+
+        <div class="previous-receipts-section">
+          <h3 class="previous-receipts-title">Previous Receipts</h3>
+          
+          <!-- Delete Receipt Success Message -->
+          <div *ngIf="showDeleteReceiptSuccess" class="remove-confirmation-message">
+            Receipt deleted successfully!!
+          </div>
+          
+          <div *ngIf="receipts.length === 0" class="empty-receipts-message">
+            <p>No receipts uploaded yet. Click "Upload" or "Scan" to add your first receipt!</p>
+          </div>
+
+          <div *ngIf="receipts.length > 0" class="receipts-table-container">
+            <table class="receipts-table">
+              <thead>
+                <tr>
+                  <th>Receipt Name</th>
+                  <th>Upload Date</th>
+                  <th>File Size</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let receipt of receipts; let i = index">
+                  <td class="receipt-name-cell">
+                    <div class="receipt-number">{{ i + 1 }}.</div>
+                    <div class="receipt-name-text">{{ getReceiptDisplayName(receipt) }}</div>
+                  </td>
+                  <td class="receipt-date-cell">{{ receipt.uploadDateFormatted }}</td>
+                  <td class="receipt-size-cell">{{ (receipt.fileSize / 1024).toFixed(2) }} KB</td>
+                  <td class="receipt-actions-cell">
+                    <button class="view-receipt-button" (click)="viewReceipt(receipt)">
+                      View
+                    </button>
+                    <button class="delete-receipt-button" (click)="deleteReceipt(receipt.id)">
+                      Delete
+                    </button>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+        <!-- Profile View -->
+        <div *ngIf="showProfile" class="profile-container">
+          <div class="profile-header">
+            <button class="back-arrow-button" (click)="showProfile = false; showPriceComparison = false; showStoreDetails = false; showMyList = false; showReceipts = false">
+              <i class="fas fa-arrow-left"></i>
+            </button>
+            <h2 class="profile-title">My Profile</h2>
+          </div>
+          
+          <div class="profile-content">
+            <div class="profile-user-section">
+              <div class="profile-avatar">
+                <i class="fas fa-user"></i>
+              </div>
+              <div class="profile-user-info">
+                <h3 class="profile-name">{{ userName }}</h3>
+                <p class="profile-email">{{ userMobile }}</p>
+              </div>
+            </div>
+
+            <div class="profile-options" *ngIf="!showChangePassword && !showMyMemberships">
+              <div class="profile-option-item" (click)="openChangePassword()" style="cursor: pointer;">
+                <span class="profile-option-text">Change Password</span>
+                <i class="fas fa-chevron-right profile-option-arrow"></i>
+              </div>
+              <div class="profile-option-divider"></div>
+              <div class="profile-option-item inactive-option">
+                <span class="profile-option-text">Profile Settings</span>
+                <span class="coming-soon-text">Coming Soon</span>
+                <i class="fas fa-chevron-right profile-option-arrow"></i>
+              </div>
+              <div class="profile-option-divider"></div>
+              <div class="profile-option-item" (click)="navigateToReceipts()" style="cursor: pointer;">
+                <span class="profile-option-text">Receipts</span>
+                <i class="fas fa-chevron-right profile-option-arrow"></i>
+              </div>
+              <div class="profile-option-divider"></div>
+              <div class="profile-option-item" (click)="openMyMemberships()" style="cursor: pointer;">
+                <span class="profile-option-text">My Memberships</span>
+                <i class="fas fa-chevron-right profile-option-arrow"></i>
+              </div>
+              <div class="profile-option-divider"></div>
+              <div class="profile-option-item inactive-option">
+                <span class="profile-option-text">Saved Stores</span>
+                <span class="coming-soon-text">Coming Soon</span>
+                <i class="fas fa-chevron-right profile-option-arrow"></i>
+              </div>
+              <div class="profile-option-divider"></div>
+              <div class="profile-option-item logout-option" (click)="logout()" style="cursor: pointer;">
+                <span class="profile-option-text logout-text">Log Out</span>
+              </div>
+            </div>
+
+            <!-- Change Password Form -->
+            <div *ngIf="showChangePassword" class="change-password-container">
+              <div class="change-password-header">
+                <button class="back-arrow-button" (click)="closeChangePassword()">
+                  <i class="fas fa-arrow-left"></i>
+                </button>
+                <h2 class="change-password-title">Change Password</h2>
+              </div>
+
+              <form [formGroup]="changePasswordForm" (ngSubmit)="onSubmitChangePassword()" class="change-password-form">
+                <div class="form-group">
+                  <div class="input-wrapper">
+                    <input
+                      type="text"
+                      formControlName="fullName"
+                      placeholder="Full name"
+                      class="form-input"
+                    />
+                  </div>
+                </div>
+
+                <div class="form-group">
+                  <div class="input-wrapper">
+                    <input
+                      type="text"
+                      formControlName="mobileNumber"
+                      placeholder="Mobile number"
+                      class="form-input"
+                    />
+                  </div>
+                </div>
+
+                <div class="form-group">
+                  <div class="input-wrapper">
+                    <input
+                      type="text"
+                      formControlName="currentPassword"
+                      placeholder="Current password"
+                      class="form-input"
+                      readonly
+                    />
+                  </div>
+                </div>
+
+                <div class="form-group">
+                  <div class="input-wrapper">
+                    <input
+                      [type]="showNewPassword ? 'text' : 'password'"
+                      formControlName="newPassword"
+                      placeholder="New password"
+                      class="form-input"
+                    />
+                    <button type="button" class="password-toggle" (click)="toggleNewPasswordVisibility()">
+                      <svg *ngIf="!showNewPassword" class="eye-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                        <circle cx="12" cy="12" r="3"></circle>
+                      </svg>
+                      <svg *ngIf="showNewPassword" class="eye-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
+                        <line x1="1" y1="1" x2="23" y2="23"></line>
+                      </svg>
+                    </button>
+                  </div>
+                  <div *ngIf="changePasswordForm.get('newPassword')?.invalid && changePasswordForm.get('newPassword')?.touched" class="error-text">
+                    Password must be at least 6 characters
+                  </div>
+                </div>
+
+                <div class="form-group">
+                  <div class="input-wrapper">
+                    <input
+                      [type]="showConfirmPassword ? 'text' : 'password'"
+                      formControlName="confirmPassword"
+                      placeholder="Confirm password"
+                      class="form-input"
+                    />
+                    <button type="button" class="password-toggle" (click)="toggleConfirmPasswordVisibility()">
+                      <svg *ngIf="!showConfirmPassword" class="eye-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                        <circle cx="12" cy="12" r="3"></circle>
+                      </svg>
+                      <svg *ngIf="showConfirmPassword" class="eye-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
+                        <line x1="1" y1="1" x2="23" y2="23"></line>
+                      </svg>
+                    </button>
+                  </div>
+                  <div *ngIf="(changePasswordForm.get('confirmPassword')?.invalid || changePasswordForm.hasError('passwordMismatch')) && changePasswordForm.get('confirmPassword')?.touched" class="error-text">
+                    <span *ngIf="changePasswordForm.hasError('passwordMismatch')">Passwords do not match</span>
+                    <span *ngIf="!changePasswordForm.hasError('passwordMismatch')">Please confirm your password</span>
+                  </div>
+                </div>
+
+                <div *ngIf="changePasswordError" class="error-message">
+                  {{ changePasswordError }}
+                </div>
+
+                <button type="submit" [disabled]="!isChangePasswordFormValid()" class="submit-button">
+                  Save Changes
+                </button>
+              </form>
+            </div>
+
+            <!-- My Memberships Form -->
+            <div *ngIf="showMyMemberships" class="change-password-container">
+              <div class="change-password-header">
+                <button class="back-arrow-button" (click)="closeMyMemberships()">
+                  <i class="fas fa-arrow-left"></i>
+                </button>
+                <h2 class="change-password-title">My Memberships</h2>
+              </div>
+
+              <form [formGroup]="membershipForm" class="change-password-form">
+                <div class="form-group">
+                  <label class="form-label">Select Store</label>
+                  <div class="select-wrapper">
+                    <select formControlName="store" (change)="onStoreSelected()" class="form-input form-select">
+                      <option value="">Select a store</option>
+                      <option *ngFor="let store of stores" [value]="store">{{ store }}</option>
+                    </select>
+                    <i class="fas fa-chevron-down select-arrow"></i>
+                  </div>
+                </div>
+
+                <!-- Membership Number Field -->
+                <div class="form-group" *ngIf="selectedMembershipStore && getMembershipFields().includes('membershipNumber')">
+                  <div class="input-wrapper">
+                    <input
+                      type="text"
+                      formControlName="membershipNumber"
+                      placeholder="Membership Number"
+                      class="form-input"
+                    />
+                  </div>
+                </div>
+
+                <!-- Email Field -->
+                <div class="form-group" *ngIf="selectedMembershipStore && getMembershipFields().includes('email')">
+                  <div class="input-wrapper">
+                    <input
+                      type="email"
+                      formControlName="email"
+                      placeholder="Email"
+                      class="form-input"
+                    />
+                  </div>
+                </div>
+
+                <!-- Phone Field -->
+                <div class="form-group" *ngIf="selectedMembershipStore && getMembershipFields().includes('phone')">
+                  <div class="input-wrapper">
+                    <input
+                      type="tel"
+                      formControlName="phone"
+                      placeholder="Phone Number"
+                      class="form-input"
+                    />
+                  </div>
+                </div>
+
+                <!-- Card Number Field -->
+                <div class="form-group" *ngIf="selectedMembershipStore && getMembershipFields().includes('cardNumber')">
+                  <div class="input-wrapper">
+                    <input
+                      type="text"
+                      formControlName="cardNumber"
+                      placeholder="Card Number"
+                      class="form-input"
+                    />
+                  </div>
+                </div>
+
+                <!-- Expiry Date Field -->
+                <div class="form-group" *ngIf="selectedMembershipStore && getMembershipFields().includes('expiryDate')">
+                  <div class="input-wrapper">
+                    <input
+                      type="text"
+                      formControlName="expiryDate"
+                      placeholder="Expiry Date (MM/YY)"
+                      class="form-input"
+                    />
+                  </div>
+                </div>
+
+                <!-- CVV Field -->
+                <div class="form-group" *ngIf="selectedMembershipStore && getMembershipFields().includes('cvv')">
+                  <div class="input-wrapper">
+                    <input
+                      type="text"
+                      formControlName="cvv"
+                      placeholder="CVV"
+                      class="form-input"
+                    />
+                  </div>
+                </div>
+
+                <button type="button" [disabled]="!membershipForm.valid || !selectedMembershipStore" class="submit-button" (click)="saveMembership()">
+                  Save Membership
+                </button>
+              </form>
+
+              <!-- Saved Memberships Section -->
+              <div class="saved-memberships-section" *ngIf="savedMemberships.length > 0">
+                <h3 class="saved-memberships-title">Saved Memberships</h3>
+                <div class="memberships-list">
+                  <div *ngFor="let membership of savedMemberships" class="membership-item">
+                    <div class="membership-info">
+                      <div class="membership-header">
+                        <img *ngIf="getStoreDetails(membership.store).logo" [src]="getStoreDetails(membership.store).logo" [alt]="membership.store + ' Logo'" class="membership-store-logo" />
+                        <div class="membership-store">{{ membership.store }}</div>
+                      </div>
+                      <div class="membership-details">
+                        <span *ngIf="membership.membershipNumber">Membership: {{ membership.membershipNumber }}</span>
+                        <span *ngIf="membership.email">Email: {{ membership.email }}</span>
+                        <span *ngIf="membership.phone">Phone: {{ membership.phone }}</span>
+                      </div>
+                    </div>
+                    <div class="membership-actions">
+                      <button class="edit-membership-button" (click)="editMembership(membership)">
+                        <i class="fas fa-edit"></i> Edit
+                      </button>
+                      <button class="delete-membership-button" (click)="deleteMembership(membership.id)">
+                        <i class="fas fa-trash"></i> Delete
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Product Grid View -->
+        <div *ngIf="!showPriceComparison && !showStoreDetails && !showMyList && !showReceipts && !showProfile" class="items-grid">
+        <div *ngFor="let item of filteredItems" class="item-card">
+          <div class="item-image-container">
+            <div class="item-image">{{ item.image }}</div>
+          </div>
+          <div class="item-details">
+            <div class="item-name">{{ item.name }}</div>
+            <div class="item-price">${{ item.price.toFixed(2) }}</div>
+            <button class="view-button" (click)="viewProduct(item.id)">View</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Add to List Confirmation Popup -->
+  <div class="confirmation-popup-overlay" *ngIf="showAddToListConfirmation" (click)="closeConfirmation()">
+    <div class="confirmation-popup" (click)="$event.stopPropagation()">
+      <div class="confirmation-icon-container">
+        <div class="checkmark-circle">
+          <svg class="checkmark" viewBox="0 0 52 52">
+            <circle class="checkmark-circle-bg" cx="26" cy="26" r="25" fill="none"/>
+            <path class="checkmark-check" fill="none" d="M14.1 27.2l7.1 7.2 16.7-16.8"/>
+          </svg>
+        </div>
+      </div>
+      <h3 class="confirmation-title">Success!</h3>
+      <p class="confirmation-message">You have added to list Successfully!!</p>
+      <div class="confirmation-actions">
+        <button class="confirmation-button view-list-button" (click)="viewList()">
+          View List
+        </button>
+        <button class="confirmation-button home-button" (click)="goToHomeFromConfirmation()">
+          Home
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Zipcode Popup -->
+  <div class="zipcode-popup-overlay" *ngIf="showZipcodePopup" (click)="closeZipcodePopup()">
+    <div class="zipcode-popup" (click)="$event.stopPropagation()">
+      <h3 class="popup-title">Enter Zipcode</h3>
+      <p class="popup-subtitle">Enter 5-6 digit zipcode</p>
+      <div class="zipcode-input-container">
+        <input
+          type="text"
+          [(ngModel)]="zipcodeInput"
+          (input)="onZipcodeInput($event)"
+          (keyup.enter)="saveZipcode()"
+          maxlength="6"
+          placeholder="000000"
+          class="zipcode-input"
+          autofocus
+        />
+      </div>
+      <div class="popup-actions">
+        <button class="popup-back-button" (click)="closeZipcodePopup()">Back</button>
+        <button class="popup-save-button" (click)="saveZipcode()" [disabled]="zipcodeInput.length < 5">Save</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Delete Receipt Confirmation Popup -->
+  <div class="confirmation-popup-overlay" *ngIf="showDeleteReceiptConfirmation" (click)="cancelDeleteReceipt()">
+    <div class="confirmation-popup" (click)="$event.stopPropagation()">
+      <h3 class="confirmation-title">Delete Receipt</h3>
+      <p class="confirmation-message">Are you sure you want to delete this receipt?</p>
+      <div class="confirmation-actions">
+        <button class="confirmation-button home-button" (click)="cancelDeleteReceipt()">
+          Cancel
+        </button>
+        <button class="confirmation-button view-list-button" (click)="confirmDeleteReceipt()" style="background-color: #dc3545;">
+          Delete
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Membership Save Confirmation Popup -->
+  <div class="confirmation-popup-overlay" *ngIf="showMembershipSaveConfirmation" (click)="closeMembershipSaveConfirmation()">
+    <div class="confirmation-popup" (click)="$event.stopPropagation()">
+      <div class="confirmation-icon-container">
+        <div class="checkmark-circle">
+          <svg class="checkmark" viewBox="0 0 52 52">
+            <circle class="checkmark-circle-bg" cx="26" cy="26" r="25" fill="none"/>
+            <path class="checkmark-check" fill="none" d="M14.1 27.2l7.1 7.2 16.7-16.8"/>
+          </svg>
+        </div>
+      </div>
+      <h3 class="confirmation-title">Success!</h3>
+      <p class="confirmation-message">Membership saved successfully!</p>
+      <div class="confirmation-actions">
+        <button class="confirmation-button view-list-button" (click)="closeMembershipSaveConfirmation()">
+          OK
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
