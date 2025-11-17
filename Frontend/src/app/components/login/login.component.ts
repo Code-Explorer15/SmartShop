@@ -59,7 +59,7 @@ export class LoginComponent implements OnInit, OnDestroy {
       password: 'test123'
     },
     {
-      fullName: 'Charlette Tang',
+      fullName: 'Charlotte Tang',
       countryCode: '+1',
       mobileNumber: '2424242424',
       password: 'demo123'

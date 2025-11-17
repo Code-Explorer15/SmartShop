@@ -26,6 +26,7 @@ export class ForgotPasswordComponent {
   successMessage: string = '';
   isLoading: boolean = false;
   selectedCountry: Country;
+  showCurrentPassword: boolean = false;
   showPassword: boolean = false;
   showConfirmPassword: boolean = false;
   showCountryDropdown: boolean = false;
@@ -65,6 +66,7 @@ export class ForgotPasswordComponent {
       fullName: ['', [Validators.required]],
       countryCode: [this.selectedCountry.dialCode, [Validators.required]],
       mobileNumber: ['', [Validators.required]],
+      currentPassword: ['', [Validators.required]],
       newPassword: ['', [Validators.required, Validators.minLength(6)]],
       confirmPassword: ['', [Validators.required]]
     }, { validators: this.passwordMatchValidator });
@@ -155,6 +157,10 @@ export class ForgotPasswordComponent {
     this.showCountryDropdown = !this.showCountryDropdown;
   }
 
+  toggleCurrentPasswordVisibility() {
+    this.showCurrentPassword = !this.showCurrentPassword;
+  }
+
   togglePasswordVisibility() {
     this.showPassword = !this.showPassword;
   }
@@ -174,9 +180,6 @@ export class ForgotPasswordComponent {
     return null;
   }
 
-  goBack() {
-    this.router.navigate(['/login']);
-  }
 
   onSubmit() {
     if (this.forgotPasswordForm.valid) {
