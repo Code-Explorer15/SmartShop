@@ -180,6 +180,9 @@ export class ForgotPasswordComponent {
     return null;
   }
 
+  goBack() {
+    this.router.navigate(['/login']);
+  }
 
   onSubmit() {
     if (this.forgotPasswordForm.valid) {
