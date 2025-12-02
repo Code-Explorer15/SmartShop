@@ -52,6 +52,10 @@ export class HomeComponent implements OnInit, OnDestroy {
   showMyList: boolean = false; // Toggle between product grid and my list view
   myListItems: any[] = []; // Store list items with full details
   showRemoveConfirmation: boolean = false; // Show remove confirmation message
+  deletedItem: any = null; // Store deleted item for undo
+  undoTimeout: any = null; // Store timeout reference for undo
+  undoCountdown: number = 0; // Countdown value (seconds) for undo
+  undoInterval: any = null; // Interval reference for countdown
   showReceipts: boolean = false; // Toggle between product grid and receipts view
   receipts: any[] = []; // Store uploaded receipts
   showDeleteReceiptConfirmation: boolean = false; // Show delete receipt confirmation popup
@@ -1885,18 +1889,9 @@ export class HomeComponent implements OnInit, OnDestroy {
     if (this.selectedProduct && this.selectedStore) {
       const productKey = `${this.selectedProduct.id}-${this.selectedStore.store}`;
       
-      // Check if this product from this store is already added
+      // Check if this exact product from this store is already added
       if (this.addedProducts.has(productKey)) {
         return; // Already added, do nothing
-      }
-      
-      // Check if this product (from any store) is already added
-      const productAddedFromAnyStore = Array.from(this.addedProducts).some(key => 
-        key.startsWith(`${this.selectedProduct!.id}-`)
-      );
-      
-      if (productAddedFromAnyStore) {
-        return; // Product already added from another store
       }
       
       // Add to list with full details
@@ -1956,6 +1951,11 @@ export class HomeComponent implements OnInit, OnDestroy {
   removeFromList(itemId: number) {
     const item = this.myListItems.find(i => i.id === itemId);
     if (item) {
+      // Store the deleted item for potential undo
+      this.deletedItem = { ...item };
+      // Reset countdown to 10 seconds
+      this.undoCountdown = 10;
+      
       // Remove from list
       this.myListItems = this.myListItems.filter(i => i.id !== itemId);
       
@@ -1966,11 +1966,63 @@ export class HomeComponent implements OnInit, OnDestroy {
       // Save to localStorage
       this.saveMyListItems();
       
-      // Show confirmation message
+      // Show confirmation message with undo option
       this.showRemoveConfirmation = true;
-      setTimeout(() => {
+      
+      // Clear any existing timeout
+      if (this.undoTimeout) {
+        clearTimeout(this.undoTimeout);
+      }
+      // Clear any existing countdown interval
+      if (this.undoInterval) {
+        clearInterval(this.undoInterval);
+      }
+      // Start countdown interval (decrease every second)
+      this.undoInterval = setInterval(() => {
+        if (this.undoCountdown > 0) {
+          this.undoCountdown--;
+        }
+      }, 1000);
+      
+      // Set timeout to permanently delete after 10 seconds
+      this.undoTimeout = setTimeout(() => {
+        this.deletedItem = null;
         this.showRemoveConfirmation = false;
-      }, 3000);
+         this.undoCountdown = 0;
+         if (this.undoInterval) {
+           clearInterval(this.undoInterval);
+           this.undoInterval = null;
+         }
+      }, 10000);
+    }
+  }
+
+  undoDelete() {
+    if (this.deletedItem) {
+      // Restore the item to the list
+      this.myListItems.push(this.deletedItem);
+      
+      // Restore to addedProducts set
+      const productKey = `${this.deletedItem.productId}-${this.deletedItem.store}`;
+      this.addedProducts.add(productKey);
+      
+      // Save to localStorage
+      this.saveMyListItems();
+      
+      // Clear the deleted item and timeout
+      this.deletedItem = null;
+      if (this.undoTimeout) {
+        clearTimeout(this.undoTimeout);
+        this.undoTimeout = null;
+      }
+      if (this.undoInterval) {
+        clearInterval(this.undoInterval);
+        this.undoInterval = null;
+      }
+      this.undoCountdown = 0;
+      
+      // Hide confirmation message
+      this.showRemoveConfirmation = false;
     }
   }
 
@@ -2213,12 +2265,8 @@ export class HomeComponent implements OnInit, OnDestroy {
   isProductAdded(productId: number, storeName: string): boolean {
     if (!productId || !storeName) return false;
     const productKey = `${productId}-${storeName}`;
-    // Check if this exact product-store combination is added
-    if (this.addedProducts.has(productKey)) {
-      return true;
-    }
-    // Check if this product is added from any store
-    return Array.from(this.addedProducts).some(key => key.startsWith(`${productId}-`));
+    // Only disable selection for this specific product-store combination
+    return this.addedProducts.has(productKey);
   }
 
   closeConfirmation() {
@@ -2259,6 +2307,14 @@ export class HomeComponent implements OnInit, OnDestroy {
     }
     // Stop camera stream if active
     this.stopCamera();
+    // Clear undo timeout if active
+    if (this.undoTimeout) {
+      clearTimeout(this.undoTimeout);
+    }
+    // Clear countdown interval if active
+    if (this.undoInterval) {
+      clearInterval(this.undoInterval);
+    }
   }
 }
 

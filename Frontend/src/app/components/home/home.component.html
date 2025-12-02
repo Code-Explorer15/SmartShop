@@ -255,9 +255,10 @@
         </div>
       </div>
 
-      <!-- Remove Confirmation Message -->
+      <!-- Remove Confirmation Message with Undo -->
       <div *ngIf="showRemoveConfirmation" class="remove-confirmation-message">
-        The item successfully removed from the list!!
+        The item successfully removed from the list!! ({{ undoCountdown }}s)
+        <button class="undo-button" (click)="undoDelete()">Undo</button>
       </div>
 
       <!-- My List View -->
