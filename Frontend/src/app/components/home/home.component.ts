@@ -1485,13 +1485,18 @@ export class HomeComponent implements OnInit, OnDestroy {
   }
 
   getProductCount(): number {
-    if (this.selectedCategory === 'All Products' || this.selectedCategory === 'All') {
-      // Return total count of all products
-      return this.groceryItems.length;
-    } else {
-      // Return count of filtered items for the selected category
+    // When any filter is active (sort/store) show count of filtered items
+    if (this.isFilterActive) {
       return this.filteredItems.length;
     }
+
+    // For unfiltered "All Products" show total count
+    if (this.selectedCategory === 'All Products' || this.selectedCategory === 'All') {
+      return this.groceryItems.length;
+    }
+
+    // For specific categories show filtered count
+    return this.filteredItems.length;
   }
 
   toggleSidebar() {

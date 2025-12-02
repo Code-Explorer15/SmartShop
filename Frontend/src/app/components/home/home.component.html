@@ -137,6 +137,14 @@
             {{ isFilterActive ? 'Your Result Products' : 'Featured Products' }}
             <span class="product-count">({{ getProductCount() }})</span>
           </h2>
+
+          <!-- No Products Found Message for Active Filters -->
+          <div
+            *ngIf="!showPriceComparison && !showStoreDetails && !showMyList && !showReceipts && !showProfile && isFilterActive && filteredItems.length === 0"
+            class="items-grid"
+          >
+            <p>No products found for the selected filters.</p>
+          </div>
           
           <!-- Price Comparison View -->
       <div *ngIf="showPriceComparison && selectedProduct" class="price-comparison-container">
